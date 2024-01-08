@@ -43,5 +43,6 @@ class Login:
         self.janela.mainloop()
    
     def entrar(self):
+         #Abre a página inicial
          self.janela.destroy()
          index.Projeto()

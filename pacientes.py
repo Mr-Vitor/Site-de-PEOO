@@ -1,5 +1,5 @@
 from tkinter import *
-import index, sqlite3
+import index, sqlite3, pickle
 from math import trunc
 
 class Pacientes:
@@ -132,12 +132,14 @@ class Pacientes:
         index.Projeto()
 
     def adiconaPaciente(self):
+        #Remove botões de UI
         self.borda3.place_forget()
         self.confirmaedit.place_forget()
 
         self.borda4.place_forget()
         self.confirmadelete.place_forget()
 
+        #Cria lista com os valores dos inputs
         self.ok = 0
         self.lista_pacientes = []
         self.paci_nome = self.nome.get()
@@ -159,6 +161,8 @@ class Pacientes:
 
         self.paci_uf = self.estado.get()
 
+
+        #Confere a integridade dos inputs não inseridos na lista
         if(self.paci_nome == '' or self.paci_nome.isnumeric()):
             self.nome_span.configure(fg = self.cor_letra, text='Nome inválido')
         else:
@@ -171,6 +175,7 @@ class Pacientes:
             self.estado_span.configure(fg = '#D9D9D9')
             self.ok += 1
 
+        #Tratamento de exceção dos inputs na lista
         for i in range(len(self.lista_pacientes)):
             try:
                 if(self.lista_pacientes[i].isnumeric() != True):
@@ -181,6 +186,7 @@ class Pacientes:
                 self.error_span[i].configure(fg = '#D9D9D9')
                 self.ok += 1
 
+        #Insere os valores no BD
         if(self.ok == 7):
             con = sqlite3.connect('Banco_principal.db')
             sql = con.cursor()
@@ -190,6 +196,7 @@ class Pacientes:
             con.commit()
             con.close()
 
+            #Remove conteúdo dos spans e confirma sucesso
             self.nome.delete(0, END)
             self.cpf.delete(0, END)
             self.sus.delete(0, END)
@@ -199,11 +206,13 @@ class Pacientes:
             self.estado.delete(0, END)
 
             self.nome_span.configure(text='Paciente cadastrado', fg = self.cor_letra)
+            #Remove spans
             self.estado_span.configure(fg = '#D9D9D9')
             for i in range(len(self.lista_pacientes)):
                 self.error_span[i].configure(fg = '#D9D9D9')
 
     def editarPaciente(self):
+        #Variáveis temporárias
         self.att_paci_nome = self.nome.get()
         self.att_cpf = self.cpf.get()
 
@@ -253,6 +262,7 @@ class Pacientes:
                 con.close()
     
     def attPaciente(self):
+        #Atualiza o BD
         con = sqlite3.connect('Banco_principal.db')
         sql = con.cursor()
 
@@ -262,6 +272,7 @@ class Pacientes:
         con.commit()
         con.close()
 
+        #Remove conteúdo dos inputs e confirma sucesso
         self.nome.delete(0, END)
         self.cpf.delete(0, END)
         self.sus.delete(0, END)
@@ -272,6 +283,7 @@ class Pacientes:
 
         self.nome_span.configure(fg= self.cor_letra, text = "Cadastro atualizado com sucesso")
 
+        #Remove botões
         self.borda3.place_forget()
         self.confirmaedit.place_forget()
 
@@ -356,4 +368,27 @@ class Pacientes:
         con.close()
 
     def cancelar(self):
+        #Exclui a janela de confirmação
         self.janela2.destroy()
+
+    #Pickle só pra ter, não possui efeito significativo
+    def Backup(nome_arquivo, dados):
+        try:
+            with open(nome_arquivo, 'wb') as arquivo:
+                pickle.dump(dados, arquivo)
+            print(f"Backup dos dados realizado com sucesso no arquivo: {nome_arquivo}")
+        except Exception as erro:
+            print(f"Erro ao fazer backup dos dados: {str(erro)}")
+
+    def restaurar(nome_arquivo):
+        try:
+            with open(nome_arquivo, 'rb') as archive:
+                restaurando = pickle.load(archive)
+            print(f"Dados restaurados com sucesso do arquivo: {nome_arquivo}")
+            return restaurando
+        except FileNotFoundError:
+            print(f"Arquivo de backup não encontrado: {nome_arquivo}")
+            return None
+        except Exception as erro:
+            print(f"Erro ao restaurar dados do backup: {str(erro)}")
+            return None

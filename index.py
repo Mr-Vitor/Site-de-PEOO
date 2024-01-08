@@ -30,6 +30,7 @@ class Projeto():
             
             return fonte
 
+        #Botões laterais
         self.pag_inicial = configura_botão(0,'')
         self.pag_inicial.place(x=25,y=130)
         self.pacientes = configura_botão(1,self.paci)
@@ -52,10 +53,10 @@ class Projeto():
         Label(self.janela, text='AGENDA',fg='#38a680',bg='white', font=('Itim',25)).place(x=900,y=110)
 
         #Exibindo agenda 
-
         yep = 200
         yep2 = [210,230,250,270]
         for c in range(4):
+            #Dicionário para armazenar os dados do BD
             self.agenda = {'Paciente' : '',
                            'Médico' : '',
                            'Consulta' : '',
@@ -63,6 +64,7 @@ class Projeto():
 
             Frame(self.janela, width=900,height=100,bg='#87e9c9').place(x=500,y=yep)
 
+            #Cria os Frames com as informações do dicionário
             self.nome_paci = Label(self.janela, text='Paciente: ', bg='#87e9c9', font=('Itim',10))
             self.nome_paci.place(x=515,y=yep2[0])
 
@@ -75,12 +77,14 @@ class Projeto():
             self.data = Label(self.janela, text='Data:  ', bg='#87e9c9', font=('Itim',10))
             self.data.place(x=515,y=yep2[3])
 
+            #Insere os valores do DB no dicionário
             con = sqlite3.connect('Banco_principal.db')
             sql = con.cursor()
             self.cadastro = sql.execute("SELECT * FROM ATENDIMENTOS WHERE id = ?" , (str(c+1)))
             self.resultado = self.cadastro.fetchone()
 
             if(self.resultado):
+                #Caso o id retorne um valor, atualiza a agenda
                 self.agenda['Paciente'] = self.resultado[1]
                 self.agenda['Médico'] = self.resultado[3]
                 self.agenda['Consulta'] = self.resultado[5]
@@ -91,6 +95,7 @@ class Projeto():
                 self.cons.configure(text= f"Consulta: {self.agenda['Consulta']}")
                 self.data.configure(text= f"Data: {self.agenda['Data']}")
             else:
+                #Caso não retorne, Deixa vazio
                 self.nome_paci.configure(text = "Paciente: N/A")
                 self.nome_doc.configure(text= f"Médico: N/A")
                 self.cons.configure(text= f"Consulta: N/A")
@@ -99,19 +104,27 @@ class Projeto():
             con.close()
 
             for c in range(4):
+                #Atualiza a posição do próximo frame da agenda
                 yep2[c]+=150
             yep+=150
         
         self.janela.mainloop()
 
     def paci(self):
+        #Abre a janela pacientes
         self.janela.destroy()
         pacientes.Pacientes()
+
     def atend(self):
+        #Abre a janela Atendimentos
         self.janela.destroy()
         atendimentos.Atendimentos()
+
     def logi(self):
+        #Abre a janela Login
         self.janela.destroy()
         login.Login()
+
     def sair(self):
+        #Fecha o App
         exit()

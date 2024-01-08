@@ -1,5 +1,5 @@
 from tkinter import *
-import index, sqlite3
+import index, sqlite3, pickle
 from math import trunc
 
 class Atendimentos():
@@ -115,20 +115,23 @@ class Atendimentos():
 
         self.borda4 = Frame(self.janela, width=254, height=48, bg=self.cor_letra)
 
-        self.btn_confirmar = Button(self.janela, width=30, height=2,bg='blue', fg='white',text='Cadastrar',font=('Comic',10), command=self.attAtend)
+        self.btn_confirmar = Button(self.janela, width=30, height=2,bg='blue', fg='white',text='Confirmar',font=('Comic',10), command=self.attAtend)
 
         self.volta = Button(self.janela,text='<- Página inicial ',height=2,command=self.voltar,fg='blue',bg="#87e9c9")
         self.volta.place(x=40,y=700)
         self.janela.mainloop()
     
     def voltar(self):
+        #remove a janela atual e volta para o início
         self.janela.destroy()
         index.Projeto()
 
     def adiconaAtend(self):
+        #remove botão de confirmar
         self.borda4.place_forget()
         self.btn_confirmar.place_forget()
 
+        #Cria lista com os valores dos inputs
         self.ok = 0
         self.lista_entry = []
         self.entry_nome = self.nome.get()
@@ -145,6 +148,7 @@ class Atendimentos():
         self.entry_consulta = self.consulta.get()
         self.lista_entry.append(self.entry_consulta)
 
+        #Tratamento de exceção dos inputs na lista
         for i in range(len(self.lista_entry)):
             try:
                 if(self.lista_entry[i] == '' or self.lista_entry[i].isnumeric()):
@@ -158,12 +162,14 @@ class Atendimentos():
                 self.error_span[i].configure(fg = '#D9D9D9')
                 self.ok += 1
         
+        #Confere a integridade dos inputs não inseridos na lista
         if(self.entry_cpf.isnumeric() == False):
             self.cpf_span.configure(fg = self.cor_letra, text= "CPF inválido")
         else:
             self.cpf_span.configure(fg = '#D9D9D9')
             self.ok += 1
 
+        #Insere os valores no BD
         if(self.ok == 5):
             con = sqlite3.connect('Banco_principal.db')
             sql = con.cursor()
@@ -173,18 +179,21 @@ class Atendimentos():
             con.commit()
             con.close()
 
+            #Apaga as informações dos inputs
             self.nome.delete(0, END)
             self.cpf.delete(0, END)
             self.nome_medico.delete(0, END)
             self.data.delete(0, END)
             self.consulta.delete(0, END)
 
+            #Remove os spans
             self.cpf_span.configure(fg = '#D9D9D9')
             for i in range(len(self.lista_entry)):
                 self.error_span[i].configure(fg = '#D9D9D9')
             self.nome_span.configure(text='Atendimento cadastrado', fg = self.cor_letra)
 
     def editarAtend(self):
+        #Variáveis temporárias
         self.att_nome = self.nome.get()
         self.att_cpf = self.cpf.get()
         
@@ -194,9 +203,11 @@ class Atendimentos():
         for i in range(len(self.error_span)):
             self.error_span[i].configure(fg = '#D9D9D9')
 
+        #Confere se os inputs nome e cpf estão preenchidos
         if(self.nome.get() == '' or self.cpf.get() == ''):
             self.nome_span.configure(fg = self.cor_letra, text='Digite um nome e cpf para editar')
         else:
+            #Pega os valores correspondentes do BD
             con = sqlite3.connect('Banco_principal.db')
             sql = con.cursor()
 
@@ -204,10 +215,12 @@ class Atendimentos():
             self.resultado = self.cadastro.fetchone()
 
             if self.resultado[0] < 1:
+                #Valor não existe, retorna erro
                 self.nome_span.configure(fg = self.cor_letra, text= 'Atendimento não cadastrado')
                 con.close()
 
             else:
+                #Valor existe, exibe os campos de inputs
                 self.borda4.place(x=1000, y=550)
                 self.btn_confirmar.place(x=1002,y=552)
 
@@ -224,6 +237,7 @@ class Atendimentos():
                 con.close()
     
     def attAtend(self):
+        #Atualiza o BD
         con = sqlite3.connect('Banco_principal.db')
         sql = con.cursor()
 
@@ -233,6 +247,7 @@ class Atendimentos():
         con.commit()
         con.close()
 
+        #Remove o conteúdo dos inputs e exibe mensagem de sucesso
         self.nome.delete(0, END)
         self.cpf.delete(0, END)
         self.nome_medico.delete(0, END)
@@ -241,6 +256,7 @@ class Atendimentos():
 
         self.nome_span.configure(fg= self.cor_letra, text = "Atendimento atualizado com sucesso")
 
+        #Remove o botão de confirmar
         self.borda4.place_forget()
         self.btn_confirmar.place_forget()
     
@@ -330,3 +346,25 @@ class Atendimentos():
 
     def cancelar(self):
         self.janela2.destroy()
+
+    #Pickle só pra ter, não possui efeito significativo
+    def Backup(nome_arquivo, dados):
+        try:
+            with open(nome_arquivo, 'wb') as arquivo:
+                pickle.dump(dados, arquivo)
+            print(f"Backup dos dados realizado com sucesso no arquivo: {nome_arquivo}")
+        except Exception as erro:
+            print(f"Erro ao fazer backup dos dados: {str(erro)}")
+
+    def restaurar(nome_arquivo):
+        try:
+            with open(nome_arquivo, 'rb') as archive:
+                restaurando = pickle.load(archive)
+            print(f"Dados restaurados com sucesso do arquivo: {nome_arquivo}")
+            return restaurando
+        except FileNotFoundError:
+            print(f"Arquivo de backup não encontrado: {nome_arquivo}")
+            return None
+        except Exception as erro:
+            print(f"Erro ao restaurar dados do backup: {str(erro)}")
+            return None
