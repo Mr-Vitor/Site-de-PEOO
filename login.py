@@ -1,7 +1,6 @@
 from tkinter import *
 import index
 
-
 class Login:
     def __init__(self):
         #Criando a janela
@@ -41,15 +40,8 @@ class Login:
         self.login = Button(self.janela,width=40,height=2,fg="white",text='ENTRAR',font=('Comic',12),command=self.entrar,bg='blue')
         self.login.place(x=540,y=570) 
 
-        
-       
-
         self.janela.mainloop()
-       
-    
    
     def entrar(self):
          self.janela.destroy()
          index.Projeto()
-
-

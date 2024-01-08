@@ -1,5 +1,5 @@
 from tkinter import *
-import atendimentos,login,pacientes
+import atendimentos, login, pacientes, sqlite3
 
 class Projeto():
     def __init__(self):
@@ -38,8 +38,8 @@ class Projeto():
         self.atendimentos.place(x=25,y=290)
         self.login = configura_botão(3,self.logi)
         self.login.place(x=25,y=380)
-        self.sair = configura_botão(4,self.sair)
-        self.sair.place(x=25,y=470)
+        self.quit = configura_botão(4,self.sair)
+        self.quit.place(x=25,y=470)
 
         #imagem
         self.canvas = Canvas(self.janela,width=203,height=200,bg="#87e9c9",bd=0,highlightthickness=0)
@@ -56,24 +56,52 @@ class Projeto():
         yep = 200
         yep2 = [210,230,250,270]
         for c in range(4):
+            self.agenda = {'Paciente' : '',
+                           'Médico' : '',
+                           'Consulta' : '',
+                           'Data' : ''}
+
             Frame(self.janela, width=900,height=100,bg='#87e9c9').place(x=500,y=yep)
 
-            Label(self.janela,text='Data:  ',bg='#87e9c9', font=('Itim',10)).place(x=515,y=yep2[0])
-            Label(self.janela,text='Paciente :',bg='#87e9c9', font=('Itim',10)).place(x=515,y=yep2[1])
-            Label(self.janela,text='Médico : ',bg='#87e9c9', font=('Itim',10)).place(x=515,y=yep2[2])
-            Label(self.janela,text='Consulta : ',bg='#87e9c9', font=('Itim',10)).place(x=515,y=yep2[3]) 
-            
+            self.nome_paci = Label(self.janela, text='Paciente: ', bg='#87e9c9', font=('Itim',10))
+            self.nome_paci.place(x=515,y=yep2[0])
+
+            self.nome_doc = Label(self.janela, text='Médico: ', bg='#87e9c9', font=('Itim',10))
+            self.nome_doc.place(x=515,y=yep2[1])
+
+            self.cons = Label(self.janela, text='Consulta: ', bg='#87e9c9', font=('Itim',10))
+            self.cons.place(x=515,y=yep2[2]) 
+
+            self.data = Label(self.janela, text='Data:  ', bg='#87e9c9', font=('Itim',10))
+            self.data.place(x=515,y=yep2[3])
+
+            con = sqlite3.connect('Banco_principal.db')
+            sql = con.cursor()
+            self.cadastro = sql.execute("SELECT * FROM ATENDIMENTOS WHERE id = ?" , (str(c+1)))
+            self.resultado = self.cadastro.fetchone()
+
+            if(self.resultado):
+                self.agenda['Paciente'] = self.resultado[1]
+                self.agenda['Médico'] = self.resultado[3]
+                self.agenda['Consulta'] = self.resultado[5]
+                self.agenda['Data'] = self.resultado[4]
+
+                self.nome_paci.configure(text = f"Paciente: {self.agenda['Paciente']}")
+                self.nome_doc.configure(text= f"Médico: {self.agenda['Médico']}")
+                self.cons.configure(text= f"Consulta: {self.agenda['Consulta']}")
+                self.data.configure(text= f"Data: {self.agenda['Data']}")
+            else:
+                self.nome_paci.configure(text = "Paciente: N/A")
+                self.nome_doc.configure(text= f"Médico: N/A")
+                self.cons.configure(text= f"Consulta: N/A")
+                self.data.configure(text= f"Data: N/A")
+
+            con.close()
+
             for c in range(4):
                 yep2[c]+=150
             yep+=150
         
-        
-        
-
-
-
-
-
         self.janela.mainloop()
 
     def paci(self):
@@ -87,6 +115,3 @@ class Projeto():
         login.Login()
     def sair(self):
         exit()
-
-    
-

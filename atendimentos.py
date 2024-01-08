@@ -1,18 +1,28 @@
 from tkinter import *
 import index, sqlite3
-
-con = sqlite3.connect('Banco_principal.db')
-sql = con.cursor()
-
-listaTabelas = sql.execute("SELECT count(name) FROM sqlite_master WHERE type='table' AND name='ATENDIMENTOS'")
-
-if listaTabelas.fetchone()[0]!=1 :
-    sql.execute("CREATE TABLE ATENDIMENTOS (nome, cpf, medico, data, consulta)")
-
-con.close()
+from math import trunc
 
 class Atendimentos():
     def __init__(self) -> None:
+        #Criando tabela
+        con = sqlite3.connect('Banco_principal.db')
+        sql = con.cursor()
+        listaTabelas = sql.execute("SELECT count(name) FROM sqlite_master WHERE type='table' AND name='ATENDIMENTOS'")
+
+        if listaTabelas.fetchone()[0]!=1 :
+            sql.execute("""CREATE TABLE ATENDIMENTOS 
+            (
+                id INTEGER PRIMARY KEY,
+                nome TEXT,
+                cpf TEXT, 
+                medico TEXT, 
+                data TEXT, 
+                consulta TEXT
+            )""")
+            con.commit()
+
+        con.close()
+
         #Criando a janela
         self.janela = Tk()
         self.janela.configure(bg='white')
@@ -62,7 +72,7 @@ class Atendimentos():
         self.nome = Entry(self.janela,width=45,font=letra)
         self.nome.place(x=100,y=350)
 
-        self.nome_span = Label(self.janela, text='Nome inválido', bg='#D9D9D9', fg='#D9D9D9', font=('Arial',10))
+        self.nome_span = Label(self.janela, text='', bg='#D9D9D9', fg='#D9D9D9', font=('Arial',10))
         self.nome_span.place(x=100, y=390)
         self.error_span.append(self.nome_span)
 
@@ -71,7 +81,7 @@ class Atendimentos():
         self.cpf = Entry(self.janela,width=27,font=letra)
         self.cpf.place(x=900,y=350)
 
-        self.cpf_span = Label(self.janela, text='CPF inválido', bg='#D9D9D9', fg='#D9D9D9', font=('Arial',10))
+        self.cpf_span = Label(self.janela, text='', bg='#D9D9D9', fg='#D9D9D9', font=('Arial',10))
         self.cpf_span.place(x=900, y=390)
 
         #segunda linha
@@ -116,6 +126,9 @@ class Atendimentos():
         index.Projeto()
 
     def adiconaAtend(self):
+        self.borda4.place_forget()
+        self.btn_confirmar.place_forget()
+
         self.ok = 0
         self.lista_entry = []
         self.entry_nome = self.nome.get()
@@ -134,16 +147,19 @@ class Atendimentos():
 
         for i in range(len(self.lista_entry)):
             try:
-                if(self.lista_entry[i] == ''):
+                if(self.lista_entry[i] == '' or self.lista_entry[i].isnumeric()):
                     print(1/0)
             except:
-                self.error_span[i].configure(fg = self.cor_letra)
+                if(i == 0):
+                    self.error_span[i].configure(text = "Nome inválido", fg = self.cor_letra)
+                else:
+                    self.error_span[i].configure(fg = self.cor_letra)
             else:
                 self.error_span[i].configure(fg = '#D9D9D9')
                 self.ok += 1
         
         if(self.entry_cpf.isnumeric() == False):
-            self.cpf_span.configure(fg = self.cor_letra)
+            self.cpf_span.configure(fg = self.cor_letra, text= "CPF inválido")
         else:
             self.cpf_span.configure(fg = '#D9D9D9')
             self.ok += 1
@@ -151,9 +167,9 @@ class Atendimentos():
         if(self.ok == 5):
             con = sqlite3.connect('Banco_principal.db')
             sql = con.cursor()
-            sql.execute("""INSERT INTO ATENDIMENTOS (nome, cpf, medico, data, consulta)
-                        VALUES (?,?,?,?,?)""", (self.entry_nome, self.entry_cpf, self.entry_doc,
-                        self.entry_data, self.entry_consulta))
+            sql.execute("""INSERT INTO ATENDIMENTOS (nome, cpf, medico, data, consulta) VALUES (?,?,?,?,?)""", 
+                        (self.nome.get(), self.cpf.get(), self.nome_medico.get(),
+                        self.data.get(), self.consulta.get()))
             con.commit()
             con.close()
 
@@ -166,23 +182,25 @@ class Atendimentos():
             self.cpf_span.configure(fg = '#D9D9D9')
             for i in range(len(self.lista_entry)):
                 self.error_span[i].configure(fg = '#D9D9D9')
-            self.nome_span.configure(text='Cadastro realizado', fg = self.cor_letra)
-
+            self.nome_span.configure(text='Atendimento cadastrado', fg = self.cor_letra)
 
     def editarAtend(self):
-
         self.att_nome = self.nome.get()
+        self.att_cpf = self.cpf.get()
+        
+        #Apaga os spans 
+        self.nome_span.configure(text = '')
+        self.cpf_span.configure(text = '')
+        for i in range(len(self.error_span)):
+            self.error_span[i].configure(fg = '#D9D9D9')
 
-        if(self.att_nome == '' or self.cpf.get() == ''):
+        if(self.nome.get() == '' or self.cpf.get() == ''):
             self.nome_span.configure(fg = self.cor_letra, text='Digite um nome e cpf para editar')
         else:
-            self.borda4.place(x=1000, y=550)
-            self.btn_confirmar.place(x=1002,y=552)
-
             con = sqlite3.connect('Banco_principal.db')
             sql = con.cursor()
 
-            self.cadastro = sql.execute(f"SELECT count(nome) FROM ATENDIMENTOS WHERE nome = ? AND cpf = ?", (self.att_nome, self.cpf.get()))
+            self.cadastro = sql.execute(f"SELECT count(nome) FROM ATENDIMENTOS WHERE nome = ? AND cpf = ?", (self.nome.get(), self.cpf.get()))
             self.resultado = self.cadastro.fetchone()
 
             if self.resultado[0] < 1:
@@ -190,56 +208,112 @@ class Atendimentos():
                 con.close()
 
             else:
-                self.nome_span.configure(fg = '#D9D9D9', text='')
-                self.cadastro = sql.execute("SELECT * FROM ATENDIMENTOS WHERE nome = ? ", (self.att_nome))
+                self.borda4.place(x=1000, y=550)
+                self.btn_confirmar.place(x=1002,y=552)
+
+                self.cadastro = sql.execute("SELECT * FROM ATENDIMENTOS WHERE nome = ? AND cpf = ? ", (self.nome.get(), self.cpf.get()))
                 self.resultado = self.cadastro.fetchone()
 
-                self.cpf.delete(0, END)
                 self.nome_medico.delete(0, END)
                 self.data.delete(0, END)
                 self.consulta.delete(0, END)
 
-                self.cpf.insert(0, self.resultado[1])
-                self.nome_medico.insert(0, self.resultado[2])
-                self.data.insert(0, self.resultado[3])
-                self.consulta.insert(0, self.resultado[4])
+                self.nome_medico.insert(0, self.resultado[3])
+                self.data.insert(0, self.resultado[4])
+                self.consulta.insert(0, self.resultado[5])
                 con.close()
     
     def attAtend(self):
         con = sqlite3.connect('Banco_principal.db')
         sql = con.cursor()
 
-        sql.execute("UPDATE ATENDIMENTOS SET nome = ?, cpf = ?, medico = ?, data = ?, consulta = ? WHERE nome = ?",
-                    (self.nome.get(), self.cpf.get(), self.nome_medico.get(), self.data.get(), self.consulta.get(), self.att_nome)) 
+        sql.execute("UPDATE ATENDIMENTOS SET nome = ?, cpf = ?, medico = ?, data = ?, consulta = ? WHERE nome = ? and cpf = ?",
+                    (self.nome.get(), self.cpf.get(), self.nome_medico.get(), self.data.get(), self.consulta.get(), self.att_nome, self.att_cpf)) 
 
         con.commit()
         con.close()
+
+        self.nome.delete(0, END)
+        self.cpf.delete(0, END)
+        self.nome_medico.delete(0, END)
+        self.data.delete(0, END)
+        self.consulta.delete(0, END)
+
+        self.nome_span.configure(fg= self.cor_letra, text = "Atendimento atualizado com sucesso")
+
+        self.borda4.place_forget()
+        self.btn_confirmar.place_forget()
     
     def deleteAtend(self):
+        #Apaga os spans 
+        self.nome_span.configure(text = '')
+        self.cpf_span.configure(text = '')
+        for i in range(len(self.error_span)):
+            self.error_span[i].configure(fg = '#D9D9D9')
 
+        #Pega o cpf e se for vazio, retorna aviso
         if(self.cpf.get() == ''):
-            self.cpf_span.configure(fg = self.cor_letra, text='Digite um CPF cadastrado para excluir')
+            self.nome_span.configure(fg = self.cor_letra, text='Digite um CPF cadastrado para excluir')
         else:
+        #Abre o BD
             con = sqlite3.connect('Banco_principal.db')
             sql = con.cursor()
 
+        #Confere se o cadastro existe
             self.cadastro = sql.execute(f"SELECT count(cpf) FROM ATENDIMENTOS WHERE nome = ? AND cpf = ? ", (self.nome.get(), self.cpf.get()))
             self.resultado = self.cadastro.fetchone()
 
+            #Não existe, retorna erro
             if self.resultado[0] < 1:
-                self.cpf_span.configure(fg = self.cor_letra, text= 'Nome/CPF não cadastrado')
+                self.nome_span.configure(fg = self.cor_letra, text= 'Nome/CPF não cadastrado')
                 con.close()
-
+            
+            #Existe
             else:
-                sql.execute("DELETE FROM ATENDIMENTOS WHERE cpf = ?", (self.cpf.get())) 
+                #Criando a janela2 para confirmação de exclusão
+                self.janela2 = Tk()
+                self.janela2.configure(bg='white')
+                self.janela2.geometry("{0}x{1}+0+0".format(trunc(self.janela2.winfo_screenwidth()/5), trunc(self.janela2.winfo_screenheight()/5)))
 
-                self.nome.delete(0, END)
-                self.cpf.delete(0, END)
-                self.nome_medico.delete(0, END)
-                self.data.delete(0, END)
-                self.consulta.delete(0, END)
+                self.confirma = Frame(self.janela2, width=40,height=10, bg='white')
+                self.confirma.place(x=50,y=50)
+                Label(self.janela2, text='Deseja mesmo excluir?', bg='white', fg= 'blue').place(x=85,y=25)
+                self.botaoConfirmar = Button(self.janela2, text='Confirmar', bg='blue',fg='white', command = self.excluir)
+                self.botaoConfirmar.place(x=85, y=82)
+                self.botaoCancela =  Button(self.janela2, text='Cancelar',bg='blue',fg='white', command = self.cancelar)
+                self.botaoCancela.place(x=155, y=82)
+                
+            con.close()
 
-                self.nome_span.configure(fg= self.cor_letra, text='Atendimento excluído')
+    def excluir(self):
+        #Remove a janela2
+        self.janela2.destroy()
 
-                con.commit()
-                con.close()
+        #Abre o BD
+        con = sqlite3.connect("Banco_principal.db")
+        sql = con.cursor()
+
+        #Deleta valor da tabela e atualiza o ID 
+        self.busca = sql.execute ("SELECT id FROM ATENDIMENTOS WHERE nome = ? AND cpf = ?", (self.nome.get(), self.cpf.get()))
+        self.idExclude = self.busca.fetchone()
+        sql.execute("DELETE FROM ATENDIMENTOS WHERE id = ?", (str(self.idExclude[0])))
+        sql.execute("UPDATE ATENDIMENTOS SET id = id-1 WHERE id > ?", (str(self.idExclude[0])))
+
+        #Apaga os campos de input e notifica sucesso
+        self.nome.delete(0, END)
+        self.cpf.delete(0, END)
+        self.nome_medico.delete(0, END)
+        self.data.delete(0, END)
+        self.consulta.delete(0, END)
+
+        self.nome_span.configure(fg= self.cor_letra, text="Atendimento Excluído")
+
+        #Remove o botão de confirmar
+        self.borda4.place_forget()
+        self.btn_confirmar.place_forget()
+
+        con.commit()
+        con.close()
+
+    def cancelar(self):
+        self.janela2.destroy()

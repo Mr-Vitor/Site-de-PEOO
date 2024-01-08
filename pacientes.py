@@ -1,19 +1,19 @@
 from tkinter import *
 import index, sqlite3
-
-con = sqlite3.connect('Banco_principal.db')
-sql = con.cursor()
-
-listaTabelas = sql.execute("SELECT count(name) FROM sqlite_master WHERE type='table' AND name='PACIENTES'")
-
-if listaTabelas.fetchone()[0]!=1 :
-    sql.execute("CREATE TABLE PACIENTES (nome, cpf, sus, idade, telefone, cep, uf)")
-    con.commit()
-
-con.close()
+from math import trunc
 
 class Pacientes:
     def __init__(self) -> None:
+        con = sqlite3.connect('Banco_principal.db')
+        sql = con.cursor()
+        listaTabelas = sql.execute("SELECT count(name) FROM sqlite_master WHERE type='table' AND name='PACIENTES'")
+
+        if listaTabelas.fetchone()[0]!=1 :
+            sql.execute("CREATE TABLE PACIENTES (nome, cpf, sus, idade, telefone, cep, uf)")
+            con.commit()
+
+        con.close()
+
         #Criando a janela
         self.janela = Tk()
         self.janela.configure(bg='white')
@@ -27,7 +27,7 @@ class Pacientes:
         self.titulo = Label(self.janela,text='NomeProjeto',bg='#87e9c9',font=("Georgia",25),fg='white')
         self.titulo.place(y=12,x=650)
         
-        #importanto estrutura base
+        #importando estrutura base
         
         #titulo da seção
         self.titulo = Label(self.janela,text='PACIENTES',fg=self.cor_letra, bg='white',font=('Comic',20))
@@ -132,6 +132,12 @@ class Pacientes:
         index.Projeto()
 
     def adiconaPaciente(self):
+        self.borda3.place_forget()
+        self.confirmaedit.place_forget()
+
+        self.borda4.place_forget()
+        self.confirmadelete.place_forget()
+
         self.ok = 0
         self.lista_pacientes = []
         self.paci_nome = self.nome.get()
@@ -153,13 +159,13 @@ class Pacientes:
 
         self.paci_uf = self.estado.get()
 
-        if(self.paci_nome == '' or self.paci_nome == ' '):
-            self.nome_span.configure(fg = self.cor_letra)
+        if(self.paci_nome == '' or self.paci_nome.isnumeric()):
+            self.nome_span.configure(fg = self.cor_letra, text='Nome inválido')
         else:
-            self.nome_span.configure(fg = '#D9D9D9')
+            self.nome_span.configure(text='')
             self.ok += 1
 
-        if(self.paci_uf == '' or self.paci_uf == ' '):
+        if(self.paci_uf == '' or self.paci_uf.isnumeric()):
             self.estado_span.configure(fg = self.cor_letra)
         else:
             self.estado_span.configure(fg = '#D9D9D9')
@@ -169,7 +175,7 @@ class Pacientes:
             try:
                 if(self.lista_pacientes[i].isnumeric() != True):
                     print(1/0)
-            except:
+            except ZeroDivisionError:
                 self.error_span[i].configure(fg = self.cor_letra)
             else:
                 self.error_span[i].configure(fg = '#D9D9D9')
@@ -192,29 +198,28 @@ class Pacientes:
             self.cep.delete(0, END)
             self.estado.delete(0, END)
 
-            self.nome_span.configure(text='Cadastro realizado', fg = self.cor_letra)
+            self.nome_span.configure(text='Paciente cadastrado', fg = self.cor_letra)
             self.estado_span.configure(fg = '#D9D9D9')
             for i in range(len(self.lista_pacientes)):
                 self.error_span[i].configure(fg = '#D9D9D9')
 
-
     def editarPaciente(self):
-
         self.att_paci_nome = self.nome.get()
+        self.att_cpf = self.cpf.get()
 
-        if(self.att_paci_nome == '' or self.cpf.get() == ''):
+        #Apaga os spans 
+        self.nome_span.configure(text = '')
+        self.estado_span.configure(text = '')
+        for i in range(len(self.error_span)):
+            self.error_span[i].configure(fg = '#D9D9D9')
+
+        if(self.nome.get() == '' or self.cpf.get() == ''):
             self.nome_span.configure(fg = self.cor_letra, text='Digite um nome e cpf para editar')
         else:
-            self.borda3.place(x=400,y=690)
-            self.confirmaedit.place(x=402, y=692)
-
-            self.borda4.place(x=750,y=690)
-            self.confirmadelete.place(x=752, y=692)
-
             con = sqlite3.connect('Banco_principal.db')
             sql = con.cursor()
 
-            self.cadastro = sql.execute(f"SELECT count(nome) FROM PACIENTES WHERE nome = ? AND cpf = ?", (self.att_paci_nome, self.cpf.get()))
+            self.cadastro = sql.execute(f"SELECT count(nome) FROM PACIENTES WHERE nome = ? AND cpf = ?", (self.nome.get(), self.cpf.get()))
             self.resultado = self.cadastro.fetchone()
 
             if self.resultado[0] < 1:
@@ -222,18 +227,24 @@ class Pacientes:
                 con.close()
 
             else:
+                #Aparece os botões confirmar & deletar
+                self.borda3.place(x=400,y=690)
+                self.confirmaedit.place(x=402, y=692)
+
+                self.borda4.place(x=750,y=690)
+                self.confirmadelete.place(x=752, y=692)
+                #----------------------------------------
+
                 self.nome_span.configure(fg = '#D9D9D9', text='')
-                self.cadastro = sql.execute("SELECT * FROM PACIENTES WHERE nome = ? ", (self.att_paci_nome))
+                self.cadastro = sql.execute("SELECT * FROM PACIENTES WHERE nome = ? AND cpf = ? ", (self.nome.get(), self.cpf.get()))
                 self.resultado = self.cadastro.fetchone()
 
-                self.cpf.delete(0, END)
                 self.sus.delete(0, END)
                 self.idade.delete(0, END)
                 self.telefone.delete(0, END)
                 self.cep.delete(0, END)
                 self.estado.delete(0, END)
 
-                self.cpf.insert(0, self.resultado[1])
                 self.sus.insert(0, self.resultado[2])
                 self.idade.insert(0, self.resultado[3])
                 self.telefone.insert(0, self.resultado[4])
@@ -245,40 +256,91 @@ class Pacientes:
         con = sqlite3.connect('Banco_principal.db')
         sql = con.cursor()
 
-        sql.execute("UPDATE PACIENTES SET nome = ?, cpf = ?, sus = ?, idade = ?, telefone = ?, cep = ?, uf = ? WHERE nome = ?",
+        sql.execute("UPDATE PACIENTES SET nome = ?, cpf = ?, sus = ?, idade = ?, telefone = ?, cep = ?, uf = ? WHERE nome = ? AND cpf = ?",
                     (self.nome.get(), self.cpf.get(), self.sus.get(), self.idade.get(), self.telefone.get(),
-                    self.cep.get(), self.estado.get(), self.att_paci_nome)) 
-
+                    self.cep.get(), self.estado.get(), self.att_paci_nome, self.att_cpf)) 
         con.commit()
         con.close()
+
+        self.nome.delete(0, END)
+        self.cpf.delete(0, END)
+        self.sus.delete(0, END)
+        self.idade.delete(0, END)
+        self.telefone.delete(0, END)
+        self.cep.delete(0, END)
+        self.estado.delete(0, END)
+
+        self.nome_span.configure(fg= self.cor_letra, text = "Cadastro atualizado com sucesso")
+
+        self.borda3.place_forget()
+        self.confirmaedit.place_forget()
+
+        self.borda4.place_forget()
+        self.confirmadelete.place_forget()
     
     def deletePaciente(self):
-
+        
+        #Pega o cpf e se for vazio, retorna aviso
         if(self.cpf.get() == ''):
-            self.cpf_span.configure(fg = self.cor_letra, text='Digite um CPF cadastrado para excluir')
+            self.nome_span.configure(fg = self.cor_letra, text='Digite um CPF cadastrado para excluir')
         else:
+        #Abre o BD
             con = sqlite3.connect('Banco_principal.db')
             sql = con.cursor()
-
+        #Confere se o cadastro existe
             self.cadastro = sql.execute(f"SELECT count(cpf) FROM PACIENTES WHERE nome = ? AND cpf = ? ", (self.nome.get(), self.cpf.get()))
             self.resultado = self.cadastro.fetchone()
 
             if self.resultado[0] < 1:
+                #Não existe, retorna erro
                 self.cpf_span.configure(fg = self.cor_letra, text= 'Nome/CPF não cadastrado')
-                con.close()
 
             else:
-                sql.execute("DELETE FROM PACIENTES WHERE cpf = ?", (self.cpf.get())) 
+                #Criando a janela2
+                self.janela2 = Tk()
+                self.janela2.configure(bg='white')
+                self.janela2.geometry("{0}x{1}+0+0".format(trunc(self.janela2.winfo_screenwidth()/5), trunc(self.janela2.winfo_screenheight()/5)))
 
-                self.nome.delete(0, END)
-                self.cpf.delete(0, END)
-                self.sus.delete(0, END)
-                self.idade.delete(0, END)
-                self.telefone.delete(0, END)
-                self.cep.delete(0, END)
-                self.estado.delete(0, END)
+                self.confirma = Frame(self.janela2, width=40,height=10, bg='white')
+                self.confirma.place(x=50,y=50)
+                Label(self.janela2, text='Deseja mesmo excluir?', bg='white', fg= 'blue').place(x=85,y=25)
+                self.botaoConfirmar = Button(self.janela2, text='Confirmar', bg='blue',fg='white', command = self.excluir)
+                self.botaoConfirmar.place(x=85, y=82)
+                self.botaoCancela =  Button(self.janela2, text='Cancelar',bg='blue',fg='white', command = self.cancelar)
+                self.botaoCancela.place(x=155, y=82)
 
-                self.nome_span.configure(fg= self.cor_letra, text="Cadastro Excluído")
+            con.close()
+                    
 
-                con.commit()
-                con.close()
+    def excluir(self):
+        #Remove a janela2
+        self.janela2.destroy()
+
+        #abre o BD e deleta o valor
+        con = sqlite3.connect('Banco_principal.db')
+        sql = con.cursor()
+        sql.execute("DELETE FROM PACIENTES WHERE nome = ? AND cpf = ?", (self.nome.get(), self.cpf.get())) 
+
+        #Apaga os campos de input e notifica sucesso
+        self.nome.delete(0, END)
+        self.cpf.delete(0, END)
+        self.sus.delete(0, END)
+        self.idade.delete(0, END)
+        self.telefone.delete(0, END)
+        self.cep.delete(0, END)
+        self.estado.delete(0, END)
+
+        self.nome_span.configure(fg= self.cor_letra, text="Cadastro Excluído")
+
+        #Remove os botões de confirmar e excluir e fecha o BD
+        self.borda3.place_forget()
+        self.confirmaedit.place_forget()
+
+        self.borda4.place_forget()
+        self.confirmadelete.place_forget()
+
+        con.commit()
+        con.close()
+
+    def cancelar(self):
+        self.janela2.destroy()
