@@ -33,12 +33,12 @@ class Atendimentos():
         self.cabeçalho.configure(width =self.cabeçalho.winfo_screenwidth(),height=70)
         self.cabeçalho.place(x=0,y=0)
 
-        self.titulo = Label(self.janela,text='NomeProjeto',bg='#87e9c9',font=("Georgia",25),fg='white')
+        self.titulo = Label(self.janela,text='Clinic +',bg='#87e9c9',font=("Georgia",25),fg='white')
         self.titulo.place(y=12,x=650)
 
         #titulo da seção
         self.titulo = Label(self.janela, text='ATENDIMENTOS',fg='#38a680',bg='white', font=('Itim',25))
-        self.titulo.place(y=110,x=680)
+        self.titulo.place(y=110,x=630)
 
         #Criando botões
         self.borda1 = Frame(self.janela,bg='blue',width=329,height=72)
@@ -273,7 +273,20 @@ class Atendimentos():
                 #Criando a janela2 para confirmação de exclusão
                 self.janela2 = Tk()
                 self.janela2.configure(bg='white')
-                self.janela2.geometry("{0}x{1}+0+0".format(trunc(self.janela2.winfo_screenwidth()/5), trunc(self.janela2.winfo_screenheight()/5)))
+                # Obtém as dimensões da tela
+                largura_tela = self.janela2.winfo_screenwidth()
+                altura_tela = self.janela2.winfo_screenheight()
+                wide = trunc(self.janela2.winfo_screenwidth()/5)
+                tall = trunc(self.janela2.winfo_screenheight()/5)
+
+                # Calcula as coordenadas x e y para centralizar a janela
+                x = (largura_tela - (self.janela2.winfo_reqwidth() * 2)) // 2
+                y = (altura_tela - (self.janela2.winfo_reqheight() * 2)) // 2
+
+                # Define as coordenadas da janela centralizada
+                self.janela2.geometry("{}x{}+{}+{}".format(wide, tall, x, y))
+
+                #Cria a mensagem e os botões da janela
 
                 self.confirma = Frame(self.janela2, width=40,height=10, bg='white')
                 self.confirma.place(x=50,y=50)

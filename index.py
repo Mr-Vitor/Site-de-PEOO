@@ -12,7 +12,7 @@ class Projeto():
         self.cabeçalho.configure(width =self.cabeçalho.winfo_screenwidth(),height=70)
         self.cabeçalho.place(x=0,y=0)
 
-        self.titulo = Label(self.janela,text='NomeProjeto',bg='#87e9c9',font=("Georgia",25),fg='white')
+        self.titulo = Label(self.janela,text='Clinic +',bg='#87e9c9',font=("Georgia",25),fg='white')
         self.titulo.place(y=12,x=650)
 
         #Barra lateral
